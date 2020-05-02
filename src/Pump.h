@@ -2,50 +2,60 @@
 #define PUMP_H
 
 #if ARDUINO >= 100
-  #include <Arduino.h>
+#include <Arduino.h>
 #else
-  #include <WProgram.h>
+#include <WProgram.h>
 #endif
 
-class Pump {
-  public:
-    int pinPumpPower;
-    int pumpRunTimeMillis = 1000;
-    byte pumpPower = 254; // 0 .. 254
+class Pump
+{
 
-    Pump(int pinPumpPower, int pumpRunTimeMillis, byte pumpPower) {
-      pinPumpPower = pinPumpPower;
-	  pinMode(pinPumpPower, OUTPUT);
-	  
-      pumpRunTimeMillis = pumpRunTimeMillis;
-      pumpPower = pumpPower;
-    };
+public:
+  int pumpRunTimeMillis = 1000;
+  byte pumpPowerPercent = 100; // Процент мощноти от 0 до 100(потом переводится в скважность от 0 до 254);
 
-    Pump(int pinPumpPower){
-      pinPumpPower = pinPumpPower;
-    };
+private:
+  int pinPumpPower; //Pin поодерживающий ШИМ, например D3 или D11
 
-    Pump() = default;
+public:
+  Pump(int pinPumpPower, int pumpRunTimeMillis, byte pumpPowerPercent)
+  {
+    this->pinPumpPower = pinPumpPower;
+    pinMode(pinPumpPower, OUTPUT);
 
-    ~Pump() {};
+    this->pumpRunTimeMillis = pumpRunTimeMillis;
+    this->pumpPowerPercent = pumpPowerPercent;
+  };
 
-    void watering(){
-	  Serial.println("Полив начат");
-      analogWrite(pinPumpPower, pumpPower);
-      delay(pumpRunTimeMillis);
-      digitalWrite(pinPumpPower, LOW);
-	  Serial.println("Полив закончен");
-    }
+  Pump(int pinPumpPower)
+  {
+    this->pinPumpPower = pinPumpPower;
+    pinMode(pinPumpPower, OUTPUT);
+  };
 
-    void setPowerPercent(byte power){
-      pumpPower = map(power, 0, 100, 0, 254);
-      Serial.println(pumpPower);
-    }
-	
-	void setPumpRunTimeMillis(int pumpRunTimeMillisInput){
-      pumpRunTimeMillis = pumpRunTimeMillisInput;
-    }
+  ~Pump(){};
 
+  void watering(byte pumpPowerProcent, int timeMillis)
+  {
+    byte goodness = percentToGoodness(pumpPowerProcent); //Преобразовать процент в сигнал-скважность от 0 до 254
+
+    Serial.println("Полив начат");
+    analogWrite(pinPumpPower, goodness); //Включить на шим двигатель с введеной скважностью
+    delay(timeMillis);                   //оставить на это время включенным
+    digitalWrite(pinPumpPower, LOW);     //Выключить двигатель
+    Serial.println("Полив закончен");
+  }
+
+  void watering()
+  {
+    watering(pumpPowerPercent, pumpRunTimeMillis);
+  }
+
+private:
+  byte percentToGoodness(byte power)
+  {
+    return map(power, 0, 100, 0, 254);
+  }
 };
 
 #endif

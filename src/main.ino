@@ -1,35 +1,36 @@
 #include <Arduino.h>
 #include <Pump.h>
+#include <Button.h>
 
-int pinButton = 2;
-int pinPotentiometer = A0;
 int pinVccPump = 3;
 
-Pump pump1(pinVccPump);
+Button button1(7);
 
-void setup() {
+int pinPotentiometer = A0;
+
+Pump pump(pinVccPump);
+
+void setup()
+{
   Serial.begin(9600);
-  pinMode(pinButton, INPUT);
-  initPump1();
+
+  TCCR2B = 0b00000001;//Сделаем шим на D3 и D11 пинах 31,4кГц (Нужны обе строчки)
+  TCCR2A = 0b00000001;//Сделаем шим на D3 и D11 пинах 31,4кГц (Нужны обе строчки)
 }
 
-void loop() {
-  if (digitalRead(pinButton)) {
-    int powerProcent = calculateAnalogInProcent(analogRead(pinPotentiometer));
-    pump1.setPowerPercent(powerProcent);
-    pump1.watering();
+void loop()
+{
+  if (button1.isPressed())
+  {
+    byte powerProcent = calculateAnalogInProcent(analogRead(pinPotentiometer));
+    Serial.println(powerProcent);
+
+    pump.watering(powerProcent, 5000);
   }
-
-  delay(300);
 }
 
-void initPump1(){
-  pump1 = Pump(pinVccPump);
-  pump1.setPumpRunTimeMillis(5000);
-  pump1.setPowerPercent(100);
-}
 
-int calculateAnalogInProcent(int analogSignal){
-  
-  return map(analogSignal,0, 1024, 0, 100); //907 заменить на считанное своё(максимальное значение, которые отдаёт потенцометр
+int calculateAnalogInProcent(int analogSignal)
+{
+  return map(analogSignal, 0, 1024, 0, 100); //907 заменить на считанное своё(максимальное значение, которые отдаёт потенцометр
 }
